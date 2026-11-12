@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Breathe</title>
+<style>
+/* ---- Colors live in variables so they are easy to change ---- */
+:root{--bg1:#cde7e3;--bg2:#fbe0cc;--sun:#fff2d2;--h1:#8cc0b3;--h2:#5f9f91;--ink:#1d4643;--panel:rgba(255,255,255,.6);--accent:#2c7a73;--accent-ink:#fff;--dot:#e58a52;--warn:#fff0d6;--warn-ink:#6b3a00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg1:#1b2a4a;--bg2:#4a3b6b;--sun:#f1e6c8;--h1:#2c4a68;--h2:#1f3550;--ink:#e8f1f5;--panel:rgba(10,20,40,.6);--accent:#7fd1c7;--accent-ink:#0f2a33;--dot:#f4b183;--warn:#4a3512;--warn-ink:#ffe2b0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg1:#1b2a4a;--bg2:#4a3b6b;--sun:#f1e6c8;--h1:#2c4a68;--h2:#1f3550;--ink:#e8f1f5;--panel:rgba(10,20,40,.6);--accent:#7fd1c7;--accent-ink:#0f2a33;--dot:#f4b183;--warn:#4a3512;--warn-ink:#ffe2b0;color-scheme:dark}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{min-height:100%;margin:0;background:var(--bg1);color:var(--ink);font-family:ui-rounded,"Nunito","Segoe UI",system-ui,sans-serif;overflow-x:hidden}
+[hidden]{display:none!important}
+.scene{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+.screen{position:relative;z-index:1;min-height:100%;max-width:520px;margin:0 auto;padding:24px 20px 32px;box-sizing:border-box}
+h1{font-size:1.6rem;font-weight:600;margin:0 0 4px;text-align:center}
+h2{font-size:1.15rem;font-weight:600;margin:26px 0 6px}
+.sub{margin:0;text-align:center;opacity:.85}
+/* ---- Home: exercise buttons ---- */
+.ex{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;margin:8px 0;padding:14px 16px;text-align:left;border-radius:16px;border:1px solid var(--accent);background:var(--panel);color:var(--ink);font:inherit;cursor:pointer}
+.ex small{display:block;opacity:.8;margin-top:2px}
+.ex em{font-style:normal;font-weight:600;color:var(--accent);white-space:nowrap}
+/* ---- Session screen ---- */
+#session{display:flex;flex-direction:column;align-items:center;text-align:center}
+.warn{margin:14px 0 0;padding:12px 14px;border-radius:14px;background:var(--warn);color:var(--warn-ink);text-align:left;font-size:.95rem}
+.warn label{display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-weight:600}
+.stage{position:relative;width:min(70vw,280px);aspect-ratio:1;margin:30px 0 14px;border:2px solid transparent;border-radius:18px}
+.stage.sq{border-color:var(--accent)}
+.stage.ln::after{content:"";position:absolute;right:-2px;top:0;bottom:0;border-right:2px solid var(--accent);opacity:.5}
+.dot{position:absolute;left:0;top:100%;width:20px;height:20px;border-radius:50%;background:var(--dot);transform:translate(-50%,-50%);transition:left 4s linear,top 4s linear;box-shadow:0 0 14px var(--dot);z-index:2}
+.steps{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:0 0 12px}
+.steps span{padding:6px 12px;border-radius:999px;background:var(--panel);font-size:.9rem;opacity:.7;transition:all .3s}
+.steps span.on{background:var(--accent);color:var(--accent-ink);opacity:1}
+.orb{position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle at 35% 30%,var(--sun),var(--panel) 75%);border:2px solid var(--accent);box-shadow:0 0 34px rgba(240,170,120,.4);transform:scale(.6);transition:transform 4s ease-in-out}
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#phase{font-size:1.3rem;font-weight:600}
+#count{font-size:3.2rem;font-weight:300;line-height:1.1}
+#tip{min-height:2.6em;max-width:20em;margin:0 0 4px}
+#cycles{margin:0 0 18px;opacity:.8;font-size:.95rem}
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+button.b{font:inherit;font-weight:600;padding:12px 22px;border-radius:999px;border:2px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.b.alt{background:var(--panel);color:var(--ink)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible{outline:3px solid var(--dot);outline-offset:2px}
+.note{margin:28px 0 14px;font-size:.85rem;opacity:.75;text-align:center}
+#bye{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center}
+@media (prefers-reduced-motion:reduce){.orb,.dot{transition-duration:.01s!important}}
+</style>
+</head>
+<body>
+<svg class="scene" viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" style="stop-color:var(--bg1)"/><stop offset="1" style="stop-color:var(--bg2)"/></linearGradient></defs>
+<rect width="400" height="800" fill="url(#sky)"/>
+<circle cx="300" cy="150" r="48" style="fill:var(--sun)" opacity=".9"/>
+<path d="M0 600 C80 540 160 560 240 590 S360 570 400 540 V800 H0Z" style="fill:var(--h1)"/>
+<path d="M0 690 C100 640 200 670 280 658 S380 648 400 636 V800 H0Z" style="fill:var(--h2)"/>
+</svg>
+
+<!-- SCREEN 1: home with the 4 groups (filled in by JavaScript) -->
+<div class="screen" id="home">
+<h1>Breathe</h1>
+<p class="sub">Pick what you need right now</p>
+<div id="groups"></div>
+<p class="note">For relaxation only, not medical advice. Stop if you feel dizzy or lightheaded.</p>
+<div class="btns"><button class="b alt" id="closeHome">Close</button></div>
+</div>
+
+<!-- SCREEN 2: one exercise -->
+<div class="screen" id="session" hidden>
+<h1 id="title"></h1>
+<p class="sub" id="desc"></p>
+<div class="warn" id="warn" hidden>
+<span id="warnText"></span>
+<label><input type="checkbox" id="chk"> I have read this and it is safe for me</label>
+</div>
+<div class="stage" id="stage">
+<div class="orb" id="orb" aria-hidden="true"></div>
+<div class="dot" id="dot" aria-hidden="true"></div>
+<div class="center"><div id="phase" aria-live="polite">Ready</div><div id="count">·</div></div>
+</div>
+<div class="steps" id="steps"></div>
+<p id="tip"></p>
+<p id="cycles">Rounds completed: 0</p>
+<div class="btns">
+<button class="b" id="start">Start</button>
+<button class="b alt" id="stop" disabled>Stop</button>
+<button class="b alt" id="back">Back</button>
+<button class="b alt" id="closeSes">Close</button>
+</div>
+</div>
+
+<!-- SCREEN 3: goodbye -->
+<div class="screen" id="bye" hidden>
+<p>Session ended. You can close this tab or swipe the app away.</p>
+<button class="b" id="again">Back to exercises</button>
+</div>
+
+<script>
+/* ============ 1. THE DATA ============
+   Each phase is: [name, seconds, kind, tip]
+   kind: "in" = circle grows, "out" = circle shrinks, "hold" = stays still.
+   To add an exercise, just add one more object to a group below. */
+const rep = (n, list) => Array.from({length: n}, () => list).flat(); // repeat a list n times
+
+const GROUPS = [
+  {title: "For Calm", items: [
+    {name: "Box Breathing", pattern: "4-4-4-4", shape: "square", desc: "Steady and balanced. Good for stress.",
+     phases: [["Inhale",4,"in"],["Hold",4,"hold"],["Exhale",4,"out"],["Hold",4,"hold"]]},
+    {name: "Belly Breathing", pattern: "4-6", desc: "Breathe low into your belly. Slow and soothing.",
+     phases: [["Inhale",4,"in","Through the nose. Let your belly rise."],["Exhale",6,"out","Slowly, through softly pursed lips."]]},
+    {name: "Coherent Breathing", pattern: "5-5", desc: "About six breaths a minute. Smooth and even.",
+     phases: [["Inhale",5,"in"],["Exhale",5,"out"]]}
+  ]},
+  {title: "For Sleep", items: [
+    {name: "4-7-8 Breathing", pattern: "4-7-8", desc: "A long hold and a long exhale to wind down.",
+     phases: [["Inhale",4,"in","Quietly through the nose."],["Hold",7,"hold"],["Exhale",8,"out","Through the mouth with a soft whoosh."]]},
+    {name: "Extended Exhale", pattern: "4-8", desc: "Exhale twice as long as you inhale.",
+     phases: [["Inhale",4,"in"],["Exhale",8,"out","Slow and steady, like fogging a mirror."]]}
+  ]},
+  {title: "For Energy / Morning", items: [
+    {name: "Energizing Breath (Kapalabhati)", pattern: "Fast", desc: "Short, sharp exhales. 20 pulses, then rest.",
+     warn: "Warning: do not practice this if you have high blood pressure, heart disease, epilepsy, a hernia, ulcers, or recent surgery, or if you are pregnant. Check with your doctor if unsure. Stop right away if you feel dizzy.",
+     phases: rep(20, [["Push out",0.5,"out","Quick, forceful exhales through the nose. The inhale happens by itself."],["Let in",0.5,"in","Quick, forceful exhales through the nose. The inhale happens by itself."]])
+       .concat([["Rest",15,"hold","Breathe normally."]])},
+    {name: "Lion’s Breath", pattern: "4-4", desc: "A big roaring exhale to release tension.",
+     phases: [["Inhale",4,"in","Deep breath in through the nose."],["Roar",4,"out","Open your mouth wide, stick out your tongue, and say “haaa”."]]}
+  ]},
+  {title: "For Focus", items: [
+    {name: "Anulom Vilom (Alternate Nostril)", pattern: "4-4", desc: "Switch nostrils each breath. Right thumb closes the right nostril, ring finger the left.",
+     phases: [["Inhale",4,"in","Left nostril. Right one closed."],["Exhale",4,"out","Right nostril. Left one closed."],["Inhale",4,"in","Right nostril. Left one closed."],["Exhale",4,"out","Left nostril. Right one closed."]]},
+    {name: "Bhramari (Humming Bee)", pattern: "4-6", desc: "A gentle hum that calms a busy mind.",
+     phases: [["Inhale",4,"in","Through the nose. Gently close your ears with your fingers."],["Hum",6,"out","Breathe out with a steady “mmmm” like a bee."]]}
+  ]}
+];
+
+/* ============ 2. HELPERS ============ */
+const $ = id => document.getElementById(id);
+const C = 289.03;                       // length of the ring (2 x pi x 46)
+const orb = $("orb"), dot = $("dot"), stage = $("stage"), steps = $("steps");
+let ex = null, timerId = null, pi = 0, cycles = 0, t0 = 0;
+
+function show(id){                      // show one screen, hide the others
+  ["home","session","bye"].forEach(s => $(s).hidden = (s !== id));
+  window.scrollTo(0, 0);
+}
+
+/* ============ 3. BUILD THE HOME SCREEN FROM THE DATA ============ */
+GROUPS.forEach(g => {
+  const sec = document.createElement("section");
+  sec.innerHTML = "<h2>" + g.title + "</h2>";
+  g.items.forEach(e => {
+    const b = document.createElement("button");
+    b.className = "ex";
+    b.innerHTML = "<span><b>" + e.name + (e.warn ? " ⚠" : "") + "</b><small>" + e.desc + "</small></span><em>" + e.pattern + "</em>";
+    b.onclick = () => openExercise(e);
+    sec.appendChild(b);
+  });
+  $("groups").appendChild(sec);
+});
+
+/* ============ 4. THE SESSION ============ */
+function openExercise(e){
+  stopSession();
+  ex = e;
+  $("title").textContent = e.name;
+  $("desc").textContent = e.desc;
+  $("warn").hidden = !e.warn;
+  $("warnText").textContent = e.warn || "";
+  $("chk").checked = false;
+  stage.className = "stage " + (e.shape === "square" ? "sq" : "ln");   // square for Box, a side track for the rest
+  steps.innerHTML = e.phases.length <= 6 ? e.phases.map(p => "<span>" + p[0] + "</span>").join("") : "";
+  resetVisual();
+  $("start").disabled = !!e.warn;       // must tick the box first if there is a warning
+  show("session");
+}
+$("chk").onchange = () => { $("start").disabled = !$("chk").checked || timerId !== null; };
+
+function resetVisual(){                 // put circle and ring back at the start, instantly
+  orb.style.transition = "none"; dot.style.transition = "none";
+  orb.style.transform = "scale(.6)"; dot.style.left = (ex && ex.shape === "square" ? 0 : 100) + "%"; dot.style.top = "100%";
+  for (const s of steps.children) s.className = "";
+  void orb.offsetWidth;                 // forces the browser to apply the jump now
+  orb.style.transition = ""; dot.style.transition = "";
+}
+
+function runPhase(){                    // begin the current step
+  const p = ex.phases[pi], secs = p[1];
+  $("phase").textContent = p[0];
+  if (p[3] !== undefined) $("tip").textContent = p[3];
+  $("count").textContent = secs >= 2 ? 1 : "·";
+  if (p[2] !== "hold"){                 // grow for "in", shrink for "out"
+    orb.style.transitionDuration = secs + "s";
+    orb.style.transform = "scale(" + (p[2] === "in" ? 1 : .6) + ")";
+  }
+  dot.style.transition = "left " + secs + "s linear, top " + secs + "s linear";
+  if (ex.shape === "square"){                // Box: dot walks the 4 corners
+    const c = [[0,0],[100,0],[100,100],[0,100]][pi % 4];
+    dot.style.left = c[0] + "%"; dot.style.top = c[1] + "%";
+  } else {                                   // Others: dot rises on inhale, falls on exhale
+    dot.style.left = "100%";
+    if (p[2] === "in") dot.style.top = "0%";
+    if (p[2] === "out") dot.style.top = "100%";
+  }
+  for (let i = 0; i < steps.children.length; i++) steps.children[i].className = (i === pi) ? "on" : "";
+  
+  
+  t0 = performance.now();
+}
+
+function step(){                        // runs 10 times a second
+  const secs = ex.phases[pi][1], el = (performance.now() - t0) / 1000;
+  if (secs >= 2) $("count").textContent = Math.min(Math.floor(el) + 1, secs);
+  if (el >= secs){                      // this step is finished, go to the next
+    pi++;
+    if (pi >= ex.phases.length){ pi = 0; cycles++; $("cycles").textContent = "Rounds completed: " + cycles; }
+    runPhase();
+  }
+}
+
+function startSession(){
+  if (timerId) return;
+  pi = 0; cycles = 0;
+  $("cycles").textContent = "Rounds completed: 0";
+  resetVisual(); runPhase();
+  timerId = setInterval(step, 100);
+  $("start").disabled = true; $("stop").disabled = false;
+}
+
+function stopSession(){
+  if (timerId){ clearInterval(timerId); timerId = null; }
+  resetVisual();
+  $("phase").textContent = "Ready"; $("count").textContent = "·";
+  $("tip").textContent = ""; $("cycles").textContent = "Rounds completed: 0";
+  $("stop").disabled = true;
+  $("start").disabled = !!(ex && ex.warn && !$("chk").checked);
+}
+
+/* ============ 5. BUTTONS ============ */
+function closeApp(){
+  stopSession();
+  try { window.close(); } catch (e) {}  // browsers often block this
+  show("bye");
+}
+$("start").onclick = startSession;
+$("stop").onclick = stopSession;
+$("back").onclick = () => { stopSession(); show("home"); };
+$("closeSes").onclick = closeApp;
+$("closeHome").onclick = closeApp;
+$("again").onclick = () => show("home");
+</script>
+</body>
+</html>
